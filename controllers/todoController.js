@@ -1,4 +1,13 @@
 var bodyParser = require('body-parser');
+var mongoose = require('mongoose');
+
+mongoose.connect('mongodb+srv://cyubahirorichard250:uTSoq8mnQWfP1pcD@todo-app.xvrfp.mongodb.net/?retryWrites=true&w=majority&appName=todo-app');
+
+// create schema
+
+var todoSchema = new mongoose.Schema({
+  item: String
+});
 
 var data = [{item: 'get milk'}, {item: 'walk dog'}, {item: 'kick some coding ass'}];
 
