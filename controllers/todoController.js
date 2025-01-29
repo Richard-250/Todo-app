@@ -3,35 +3,53 @@ var mongoose = require('mongoose');
 
 mongoose.connect('mongodb+srv://cyubahirorichard250:uTSoq8mnQWfP1pcD@todo-app.xvrfp.mongodb.net/?retryWrites=true&w=majority&appName=todo-app');
 
-// create schema
-
 var todoSchema = new mongoose.Schema({
   item: String
 });
 
-var data = [{item: 'get milk'}, {item: 'walk dog'}, {item: 'kick some coding ass'}];
-
-
-var urlencodedParser = bodyParser.urlencoded({extended: false});
+var Todo = mongoose.model('Todo', todoSchema);
+var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
 module.exports = function(app){
 
-    app.get('/todo', function(req, res){
-      res.render('todo', {todos: data})
+    app.get('/todo', async function(req, res){
+      try {
+        const data = await Todo.find({});
+        res.render('todo', { todos: data });
+      } catch (err) {
+        res.status(500).send(err);
+      }
     });
 
-
-    app.post('/todo', urlencodedParser , function(req, res){
-    data.push(req.body);
-    res.json(data)
-    }); 
-
-
-    app.delete('/todo/:item', function(req, res){
-    data = data.filter(function(todo){
-      return todo.item.replace(/ /g, '-') !== req.params.item;
+    app.post('/todo', urlencodedParser, async function(req, res){
+      try {
+        const newTodo = new Todo(req.body);
+        const data = await newTodo.save();
+        res.json(data);
+      } catch (err) {
+        res.status(500).send(err);
+      }
     });
-    res.json(data)
+
+    app.delete('/todo/:item', async function(req, res) {
+      try {
+        const rawItem = req.params.item;
+        const formattedItem = rawItem.replace(/-/g, " "); // Convert hyphens to spaces
+    
+        // Try deleting the exact item with either format
+        const result = await Todo.deleteOne({
+          $or: [{ item: rawItem }, { item: formattedItem }]
+        });
+    
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ message: "Item not found" });
+        }
+    
+        res.json({ message: "Item deleted successfully", deletedItem: rawItem });
+      } catch (err) {
+        res.status(500).json({ error: "Internal Server Error", details: err.message });
+      }
     });
+    
 
 };
